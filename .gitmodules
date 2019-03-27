@@ -1,0 +1,3 @@
+[submodule "l4-optimizer"]
+	path = l4tensorflow
+	url = https://github.com/martius-lab/l4-optimizer
