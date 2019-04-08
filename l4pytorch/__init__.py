@@ -146,12 +146,16 @@ class L4General(object):
         min_loss_to_use = self.minloss_factor * self.min_loss
         l_rate = self.fraction * (loss - min_loss_to_use) / (sum_inner_products(directions, derivatives) + self.epsilon)
 
+        self.step_size = float(l_rate)
         self.min_loss *= self.minloss_increase_rate
 
-        for (p, grad) in zip(self.params, directions):
-            p.data.add_(-float(l_rate), grad)
+        for (p, direction) in zip(self.params, directions):
+            p.data.add_(-self.step_size, direction)
 
         self.global_step += 1
+
+    def state_dict(self):
+        return {}
 
 
 class L4Adam(L4General):
