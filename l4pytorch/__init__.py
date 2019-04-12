@@ -85,7 +85,8 @@ class L4General(object):
     def __init__(self, params, fraction=0.15, minloss_factor=0.9, init_factor=0.75,
                  minloss_forget_time=1000.0, epsilon=1e-12,
                  gradient_estimator='momentum', gradient_params=None,
-                 direction_estimator='adam', direction_params=None):
+                 direction_estimator='adam', direction_params=None,
+                 weight_decay=0):
         """
         :param fraction: [alpha], fraction of 'optimal stepsize'
         :param minloss_factor: [gamma], fraction of min seen loss that is considered achievable
@@ -96,6 +97,7 @@ class L4General(object):
         :param gradient_params: dictionary of parameters to pass to gradient_estimator
         :param direction_estimator: [v], a gradient method used for update direction
         :param direction_params: dictionary of parameters to pass to direction_estimator
+        :param weight_decay: weight_decay hyper-parameter
         """
         self.params = list(params)
 
@@ -107,6 +109,7 @@ class L4General(object):
         self.minloss_increase_rate = 1.0 + 1.0 / minloss_forget_time
         self.epsilon = epsilon
         self.init_factor = init_factor
+        self.weight_decay = weight_decay
 
         if not direction_params:
             direction_params = {}
@@ -134,6 +137,11 @@ class L4General(object):
 
     def step(self, closure):
         loss = float(closure())
+
+        if self.weight_decay:
+            for p in self.params:
+                loss += 0.5 * self.weight_decay * p.data.norm() ** 2
+                p.grad.data.add_(self.weight_decay, p.data)
 
         if self.global_step == 0:
             self.min_loss = self.init_factor * loss
@@ -163,10 +171,10 @@ class L4Adam(L4General):
     Specialization of the L4 stepsize adaptation with Adam used for gradient updates and Mom for gradient estimation.
     """
     def __init__(self, params, fraction=0.15, minloss_factor=0.9, init_factor=0.75, minloss_forget_time=1000.0,
-                 epsilon=1e-12, adam_params=None):
+                 epsilon=1e-12, adam_params=None, weight_decay=0):
         L4General.__init__(self, params, fraction, minloss_factor, init_factor, minloss_forget_time,
                            epsilon, gradient_estimator='momentum', direction_estimator='adam',
-                           direction_params=adam_params)
+                           direction_params=adam_params, weight_decay=weight_decay)
 
 
 class L4Mom(L4General):
@@ -174,7 +182,7 @@ class L4Mom(L4General):
     Specialization of the L4 stepsize adaptation with Mom used for both gradient estimation and an update direction.
     """
     def __init__(self, params, fraction=0.15, minloss_factor=0.9, init_factor=0.75, minloss_forget_time=1000.0,
-                 epsilon=1e-12, mom_params=None):
+                 epsilon=1e-12, mom_params=None, weight_decay=0):
         L4General.__init__(self, params, fraction, minloss_factor, init_factor, minloss_forget_time,
                            epsilon, gradient_estimator='momentum', direction_estimator='momentum',
-                           direction_params=mom_params)
+                           direction_params=mom_params, weight_decay=weight_decay)
