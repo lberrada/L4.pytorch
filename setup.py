@@ -7,5 +7,5 @@ setup(name='l4pytorch',
       author='Leonard Berrada',
       license='MIT',
       packages=['l4pytorch'],
-      install_requires=[],
+      install_requires=["torch>=1.0"],
       zip_safe=False)
